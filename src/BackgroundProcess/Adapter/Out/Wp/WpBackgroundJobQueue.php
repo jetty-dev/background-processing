@@ -6,6 +6,7 @@ namespace Jetty\BackgroundProcessing\BackgroundProcess\Adapter\Out\Wp;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\QueueBatchRepository;
 use Jetty\BackgroundProcessing\BackgroundProcess\Application\Port\Out\BackgroundJobQueue;
 use Jetty\BackgroundProcessing\BackgroundProcess\Exception\RepositoryException;
+use Psr\Log\LoggerInterface;
 
 /**
  * Defines a background job queue that operates on multiple pieces in the
@@ -19,6 +20,11 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     private $identifier;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * @var QueueBatchRepository
      */
     private $batchRepository;
@@ -26,10 +32,12 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
     /**
      * Initiate new background process
      */
-    public function __construct(string $actionName)
+    public function __construct(string $actionName, LoggerInterface $logger)
     {
         $this->identifier = $actionName;
         parent::__construct($actionName);
+
+        $this->logger = $logger;
 
         $this->cron_hook_identifier     = $this->identifier . '_cron';
         $this->cron_interval_identifier = $this->identifier . '_cron_interval';
@@ -64,8 +72,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
         catch (RepositoryException $exception)
         {
-            error_log('Could not push item to background job queue.');
-            error_log($exception->getMessage());
+            $this->logger->critical(
+                'Could not push item to background job queue.',
+                ['exception' => $exception]
+            );
         }
 
         return $this;
@@ -80,8 +90,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
         catch (RepositoryException $exception)
         {
-            error_log('Could not save background job queue.');
-            error_log($exception->getMessage());
+            $this->logger->critical(
+                'Could not save background job queue.',
+                ['exception' => $exception]
+            );
         }
 
         return $this;
@@ -106,8 +118,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
         catch (RepositoryException $exception)
         {
-            error_log('An error occurred while trying to cancel a background process.');
-            error_log($exception->getMessage());
+            $this->logger->critical(
+                'An error occurred while trying to cancel a background process.',
+                ['exception' => $exception]
+            );
         }
     }
 
@@ -273,8 +287,10 @@ abstract class WpBackgroundJobQueue extends WpAjaxHandler implements BackgroundJ
         }
         catch (RepositoryException $exception)
         {
-            error_log('Could not determine if background job queue has any items.');
-            error_log($exception->getMessage());
+            $this->logger->critical(
+                'Could not determine if background job queue has any items.',
+                ['exception' => $exception]
+            );
         }
 
         return true;
